@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Lucky Wheel</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+TC:wght@500;700;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', '"Noto Sans TC"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for control drawers and history log */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* Pointer tick bounce animation */
+    @keyframes pointerWobble {
+      0% { transform: translateX(-50%) rotate(0deg); }
+      35% { transform: translateX(-50%) rotate(-18deg); }
+      70% { transform: translateX(-50%) rotate(10deg); }
+      100% { transform: translateX(-50%) rotate(0deg); }
+    }
+    .pointer-tick {
+      animation: pointerWobble 0.12s ease-out;
+    }
+
+    /* Modal entrance animation */
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-animate {
+      animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#020617] text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white overflow-x-hidden relative">
+
+  <!-- Fixed Cosmic Starfield & Nebula Galaxy Atmosphere Layers -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <!-- Deep cosmic starry sky gradient base -->
+    <div class="absolute inset-0 bg-[#020617] bg-[radial-gradient(ellipse_at_20%_20%,_rgba(2,132,199,0.32)_0%,_transparent_55%),radial-gradient(ellipse_at_85%_75%,_rgba(30,64,175,0.28)_0%,_transparent_55%),radial-gradient(ellipse_at_50%_45%,_rgba(14,165,233,0.18)_0%,_transparent_65%),radial-gradient(circle_at_15%_80%,_rgba(6,182,212,0.22)_0%,_transparent_45%)]"></div>
+    <!-- Starfield texture overlay matching user image -->
+    <div class="absolute inset-0 bg-[url('galaxy_bg.png')] bg-repeat opacity-40 mix-blend-screen bg-[length:400px_363px]"></div>
+    <!-- Glowing cosmic nebula blooms -->
+    <div class="absolute -top-40 -left-40 w-[650px] h-[650px] bg-sky-500/20 rounded-full blur-[130px]"></div>
+    <div class="absolute top-1/3 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-1/4 w-[700px] h-[700px] bg-cyan-500/18 rounded-full blur-[130px]"></div>
+  </div>
+
+  <header class="w-full bg-[#02091c]/80 backdrop-blur-md border-b border-sky-900/40 px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-lg shadow-sky-950/40 relative">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25 text-white font-black text-xl">
+        ✨
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg sm:text-xl tracking-wide bg-gradient-to-r from-sky-300 via-cyan-200 to-blue-200 bg-clip-text text-transparent">
+          Classroom Lucky Wheel
+        </h1>
+        <p class="text-xs text-sky-300/60 hidden sm:block">Interactive wheel for roll calls, team draws & challenges</p>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Sound Toggle Button -->
+      <button id="soundToggleBtn" class="p-2 sm:px-3 sm:py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-sky-800/50 text-slate-200 text-sm font-semibold flex items-center gap-2 transition active:scale-95" title="Toggle sound">
+        <span id="soundIcon">🔊</span>
+        <span class="hidden md:inline text-xs" id="soundLabel">Sound: On</span>
+      </button>
+
+      <!-- Toggle Drawer Button (Mobile/Tablet helper) -->
+      <button id="sidebarToggleBtn" class="p-2 sm:px-3 sm:py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-sky-800/50 text-slate-200 text-sm font-semibold flex items-center gap-2 transition active:scale-95">
+        <span>⚙️</span>
+        <span class="hidden sm:inline text-xs">List & Settings</span>
+      </button>
+
+      <!-- Fullscreen Toggle Button -->
+      <button id="fullscreenBtn" class="p-2 sm:px-3 sm:py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold flex items-center gap-2 transition shadow-md shadow-sky-600/30 active:scale-95" title="Toggle fullscreen">
+        <span id="fullscreenIcon">⛶</span>
+        <span class="hidden md:inline text-xs">Fullscreen</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative z-10">
+    
+    <!-- Left / Center: Interactive Wheel Stage (Lg: col 8) -->
+    <section class="lg:col-span-8 flex flex-col items-center justify-center bg-gradient-to-b from-[#06183a]/90 via-[#030d24]/90 to-[#010614]/95 rounded-3xl p-4 sm:p-8 border border-sky-500/30 shadow-[0_0_60px_rgba(2,132,199,0.35),inset_0_0_80px_rgba(14,165,233,0.08)] relative overflow-hidden backdrop-blur-md min-h-[520px]">
+      
+      <!-- Subtle internal starry nebula texture -->
+      <div class="absolute inset-0 bg-[url('galaxy_bg.png')] bg-cover bg-center opacity-30 mix-blend-screen pointer-events-none"></div>
+
+      <!-- Ambient Cosmic Backlight Glow -->
+      <div class="absolute -top-32 -left-32 w-96 h-96 bg-sky-500/25 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-cyan-400/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Wheel Wrapper with fixed aspect ratio container -->
+      <div class="relative w-full max-w-[460px] aspect-square flex items-center justify-center my-4">
+        
+        <!-- Top Pointer Needle (Luxury Faceted Platinum & Sapphire Gemstone) -->
+        <div id="pointer" class="absolute -top-8 left-1/2 -translate-x-1/2 z-20 transition-transform origin-top duration-75">
+          <svg width="46" height="56" viewBox="0 0 46 56" fill="none" class="drop-shadow-[0_10px_16px_rgba(0,0,0,0.8)] drop-shadow-[0_0_14px_rgba(56,189,248,0.65)]">
+            <defs>
+              <linearGradient id="needleSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="25%" stop-color="#cbd5e1"/>
+                <stop offset="50%" stop-color="#f8fafc"/>
+                <stop offset="75%" stop-color="#94a3b8"/>
+                <stop offset="100%" stop-color="#e2e8f0"/>
+              </linearGradient>
+              <radialGradient id="needleSapphire" cx="50%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#7dd3fc"/>
+                <stop offset="35%" stop-color="#0284c7"/>
+                <stop offset="70%" stop-color="#1d4ed8"/>
+                <stop offset="100%" stop-color="#02081f"/>
+              </radialGradient>
+              <linearGradient id="needleFacet" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+                <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+                <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+              </linearGradient>
+            </defs>
+            <!-- Outer Platinum/Diamond casing with crisp bevel -->
+            <path d="M23 55 L7 14 C4 8 8.5 2 15.5 2 H30.5 C37.5 2 42 8 39 14 L23 55 Z" fill="url(#needleSilver)" stroke="#ffffff" stroke-width="1" />
+            <!-- Inner faceted sapphire gemstone -->
+            <path d="M23 47 L12 14 C10.5 10 13.5 6 17.5 6 H28.5 C32.5 6 35.5 10 34 14 L23 47 Z" fill="url(#needleSapphire)" stroke="#0369a1" stroke-width="1" />
+            <path d="M23 47 L12 14 L23 6 Z" fill="url(#needleFacet)" />
+            <!-- Sparkling diamond glint star at needle crest -->
+            <circle cx="23" cy="14" r="3" fill="#ffffff" />
+            <polygon points="23,7 24.5,12.5 30,14 24.5,15.5 23,21 21.5,15.5 16,14 21.5,12.5" fill="#ffffff" />
+            <circle cx="23" cy="14" r="1.5" fill="#bae6fd" />
+          </svg>
+        </div>
+
+        <!-- The Canvas for Drawing Slices -->
+        <canvas id="wheelCanvas" class="w-full h-full rounded-full shadow-2xl cursor-pointer transition-transform hover:scale-[1.01]"></canvas>
+
+        <!-- Center Hub Pin Button (Faceted Sapphire Gemstone & Diamond Glitter Rim) -->
+        <button id="spinCenterBtn" class="absolute w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[radial-gradient(ellipse_at_35%_35%,_var(--tw-gradient-stops))] from-sky-300 via-blue-600 to-[#020b24] text-white font-black border-[3.5px] border-slate-100 shadow-[0_0_35px_rgba(56,189,248,0.7),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-4px_8px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-all z-10 select-none group ring-2 ring-sky-400/60 ring-offset-2 ring-offset-slate-950">
+          <svg class="w-6 h-6 sm:w-7 sm:h-7 text-amber-200 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] mb-0.5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2.8 6.5 6.7 0.6-5 4.5 1.5 6.7L12 17l-6 3.3 1.5-6.7-5-4.5 6.7-0.6L12 2z"/>
+          </svg>
+          <span class="tracking-widest font-black text-xs sm:text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-200">SPIN</span>
+          <span class="text-[9px] font-bold text-sky-200 tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">LUCKY</span>
+        </button>
+      </div>
+
+      <!-- Stage Mode & Stepper Controls -->
+      <div class="w-full max-w-lg flex flex-col sm:flex-row items-center justify-center gap-2 mt-3 mb-2">
+        <!-- Mode Tabs -->
+        <div class="inline-flex bg-slate-950/90 rounded-2xl border border-sky-900/60 p-1 shadow-lg gap-1">
+          <button id="stageModeTeamsBtn" type="button" class="px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-sky-600 text-white shadow-md shadow-sky-600/30 flex items-center gap-1.5">
+            <span>👥</span>
+            <span>Teams</span>
+          </button>
+          <button id="stageModeSeatsBtn" type="button" class="px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5">
+            <span>🔢</span>
+            <span>Seat Numbers</span>
+          </button>
+        </div>
+
+        <!-- Stepper Input -->
+        <div class="inline-flex items-center gap-1.5">
+          <div class="inline-flex items-center bg-slate-950/90 rounded-2xl border border-sky-900/60 p-1 shadow-lg">
+            <button id="stageMinusBtn" type="button" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Decrease">
+              −
+            </button>
+            <input id="stageCountInput" type="number" min="2" max="100" value="6" class="w-12 bg-transparent text-center font-extrabold text-base text-sky-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+            <button id="stagePlusBtn" type="button" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Increase">
+              +
+            </button>
+          </div>
+          <button id="stageApplyBtn" type="button" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-600/20 active:scale-95 transition flex items-center justify-center gap-1" title="Apply count">
+            <span>⚡</span>
+            <span>Set</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Button Area below Wheel -->
+      <div class="w-full max-w-md flex flex-col sm:flex-row items-center justify-center gap-3 mt-2">
+        <button id="spinBtn" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black text-lg rounded-2xl shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-95 transition flex items-center justify-center gap-2 border border-sky-200/50">
+          <span>🎲</span>
+          <span>Spin Wheel</span>
+        </button>
+        <button id="shuffleListBtn" class="w-full sm:w-auto px-4 py-3.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-semibold rounded-2xl border border-sky-900/50 active:scale-95 transition flex items-center justify-center gap-2 text-sm" title="Shuffle wheel sectors">
+          <span>🔀</span>
+          <span>Shuffle</span>
+        </button>
+      </div>
+
+      <div class="mt-4 text-xs text-sky-300/70 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+        <span>Current Sectors: <span id="itemCountDisplay" class="font-bold text-sky-200">0</span></span>
+      </div>
+    </section>
+
+    <aside id="sidebarPanel" class="lg:col-span-4 w-full flex flex-col gap-6">
+      
+      <!-- Card 1: Items Management & Presets -->
+      <div class="bg-[#050f24]/85 rounded-3xl p-5 border border-sky-900/40 shadow-xl backdrop-blur-md">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold text-slate-200 flex items-center gap-2">
+            <span>📝</span>
+            <span>Options List</span>
+          </h2>
+          <span class="text-xs text-sky-300/60">One item per line</span>
+        </div>
+
+        <!-- Dedicated Group Count Input -->
+        <div class="mb-3 p-3.5 rounded-2xl bg-[#020817]/80 border border-sky-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <label for="sidebarTeamInput" class="text-xs font-bold text-slate-300 flex items-center gap-1.5 select-none">
+              <span>👥</span>
+              <span>Team Draw:</span>
+            </label>
+            <span id="currentGroupCountBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              6 Teams Mode
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="inline-flex items-center bg-slate-900/90 rounded-xl border border-sky-900/60 p-1">
+              <button id="sidebarTeamMinusBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Decrease teams">
+                −
+              </button>
+              <input id="sidebarTeamInput" type="number" min="2" max="50" value="6" class="w-12 bg-transparent text-center font-extrabold text-sm text-sky-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+              <button id="sidebarTeamPlusBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Increase teams">
+                +
+              </button>
+            </div>
+            <button id="sidebarTeamApplyBtn" type="button" class="flex-1 py-2 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-700/20 transition flex items-center justify-center gap-1.5">
+              <span>⚡</span>
+              <span>Apply Teams</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dedicated Seat Numbers Input -->
+        <div class="mb-4 p-3.5 rounded-2xl bg-[#020817]/80 border border-sky-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <label for="sidebarSeatInput" class="text-xs font-bold text-slate-300 flex items-center gap-1.5 select-none">
+              <span>🔢</span>
+              <span>Seat Numbers:</span>
+            </label>
+            <span class="text-[10px] text-sky-300/60">Pure numbers (1~N)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="inline-flex items-center bg-slate-900/90 rounded-xl border border-sky-900/60 p-1">
+              <button id="sidebarSeatMinusBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Decrease seats">
+                −
+              </button>
+              <input id="sidebarSeatInput" type="number" min="2" max="100" value="25" class="w-12 bg-transparent text-center font-extrabold text-sm text-sky-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+              <button id="sidebarSeatPlusBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-sm flex items-center justify-center transition border border-slate-700 select-none" title="Increase seats">
+                +
+              </button>
+            </div>
+            <button id="sidebarSeatApplyBtn" type="button" class="flex-1 py-2 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-700/20 transition flex items-center justify-center gap-1.5">
+              <span>⚡</span>
+              <span>Apply Seats</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Other Quick Presets -->
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Quick Presets:</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button class="preset-btn px-2.5 py-1 text-xs bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg border border-sky-900/40 active:scale-95 transition" data-preset="tasks">
+              ⚡ Icebreaker Tasks
+            </button>
+            <button class="preset-btn px-2.5 py-1 text-xs bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-lg border border-sky-900/40 active:scale-95 transition" data-preset="rewards">
+              🎁 Classroom Rewards
+            </button>
+          </div>
+        </div>
+
+        <!-- Textarea input -->
+        <textarea id="itemsTextarea" rows="8" class="w-full bg-[#020718]/90 border border-sky-900/50 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-y leading-relaxed" placeholder="Enter options here, one per line..."></textarea>
+
+        <div class="mt-3 flex gap-2">
+          <button id="updateWheelBtn" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 active:scale-95 transition font-bold text-sm text-white rounded-xl shadow-md shadow-sky-700/25 flex items-center justify-center gap-1.5">
+            <span>💾</span>
+            <span>Update Wheel</span>
+          </button>
+          <button id="clearInputBtn" class="px-3 py-2.5 bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition font-semibold text-xs text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700" title="Clear list">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Draw History Log -->
+      <div class="bg-[#050f24]/85 rounded-3xl p-5 border border-sky-900/40 shadow-xl backdrop-blur-md flex flex-col max-h-[360px]">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold text-slate-200 flex items-center gap-2">
+            <span>🏆</span>
+            <span>Draw History</span>
+          </h2>
+          <button id="clearHistoryBtn" class="text-xs text-rose-400 hover:text-rose-300 hover:underline">
+            Clear History
+          </button>
+        </div>
+
+        <div id="historyListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1">
+          <!-- Empty state -->
+          <div id="historyEmptyState" class="py-8 text-center text-xs text-slate-500">
+            No draw history yet. Spin the wheel to get started!
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Fullscreen Celebration Confetti Canvas Overlay -->
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full hidden"></canvas>
+
+  <!-- Winner Result Announcement Modal -->
+  <div id="winnerModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-emerald-500/40 w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(16,185,129,0.25)] text-center modal-animate relative">
+      
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-3">
+        <span>🎉</span>
+        <span>Winner Selected</span>
+      </div>
+
+      <!-- Winner Name / Text Display -->
+      <div class="my-5 p-4 rounded-2xl bg-slate-800/50 border border-slate-700/60">
+        <h3 id="winnerDisplayTitle" class="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-300 to-teal-200 break-words tracking-tight">
+          --
+        </h3>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-6">
+        You can remove this winner from the wheel to avoid duplicate draws, or keep it for the next round!
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button id="modalKeepBtn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold rounded-xl text-sm transition active:scale-95">
+          Keep & Close
+        </button>
+        <button id="modalRemoveBtn" class="w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold rounded-xl text-sm shadow-lg shadow-rose-600/30 transition active:scale-95 flex items-center justify-center gap-1.5">
+          <span>🗑️</span>
+          <span>Remove from Wheel</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-700 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 pointer-events-none">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastMsg">Notification</span>
+  </div>
+
+  <script>
+    // Web Audio API Synthesizer (No external audio files required)
+    class SoundController {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTick() {
+        if (!this.enabled) return;
+        try {
+          this.initContext();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(650, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.04);
+
+          gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.05);
+        } catch (e) {
+          // Ignore Web Audio permission issues
+        }
+      }
+
+      playFanfare() {
+        if (!this.enabled) return;
+        try {
+          this.initContext();
+          if (!this.ctx) return;
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = this.ctx.currentTime + idx * 0.09;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + 0.48);
+          });
+        } catch (e) {
+          // Ignore audio errors
+        }
+      }
+    }
+
+    const soundManager = new SoundController();
+
+    // Chronological Geological Periods list for classroom team generation
+    const GEOLOGICAL_PERIODS = [
+      "Cambrian",      // 1. Cambrian (Paleozoic)
+      "Ordovician",    // 2. Ordovician (Paleozoic)
+      "Silurian",      // 3. Silurian (Paleozoic)
+      "Devonian",      // 4. Devonian (Paleozoic)
+      "Carboniferous", // 5. Carboniferous (Paleozoic)
+      "Permian",       // 6. Permian (Paleozoic)
+      "Triassic",      // 7. Triassic (Mesozoic)
+      "Jurassic",      // 8. Jurassic (Mesozoic)
+      "Cretaceous",    // 9. Cretaceous (Mesozoic)
+      "Paleogene",     // 10. Paleogene (Cenozoic)
+      "Neogene",       // 11. Neogene (Cenozoic)
+      "Quaternary"     // 12. Quaternary (Cenozoic)
+    ];
+
+    let currentMode = 'teams'; // 'teams' | 'seats' | 'custom'
+    let currentTeamCount = 6;
+    let currentSeatCount = 25;
+
+    const PRESETS = {
+      groups: GEOLOGICAL_PERIODS.slice(0, 6),
+      tasks: [
+        "Explain the core concept in your own words",
+        "Challenge or question the previous argument",
+        "Give a 1-minute speech supporting the topic",
+        "Give a 1-minute speech opposing the topic",
+        "Summarize key takeaways so far",
+        "Pick any classmate to answer the next question",
+        "Share a real-world example related to the topic",
+        "Ask the instructor your most burning question"
+      ],
+      rewards: [
+        "+1 Bonus Point",
+        "Pick the Next Student",
+        "Lifeline Card (Ask a teammate)",
+        "Spin Again!",
+        "Pass Card (Skip this question)",
+        "+2 Team Points",
+        "Teacher's Hint",
+        "30s Break / Hydrate"
+      ]
+    };
+
+    function getTeamList(count) {
+      const list = [];
+      for (let i = 0; i < count; i++) {
+        if (i < GEOLOGICAL_PERIODS.length) {
+          list.push(GEOLOGICAL_PERIODS[i]);
+        } else {
+          list.push(`Team ${i + 1}`);
+        }
+      }
+      return list;
+    }
+
+    function getSeatList(count) {
+      count = Math.max(2, Math.min(count, 100));
+      return Array.from({ length: count }, (_, i) => `${i + 1}`);
+    }
+
+    function setTeamCount(count, notify = true) {
+      if (isSpinning) return;
+      count = parseInt(count, 10);
+      if (isNaN(count)) count = 6;
+      count = Math.max(2, Math.min(count, 50));
+      currentTeamCount = count;
+      currentMode = 'teams';
+      items = getTeamList(count);
+
+      const sidebarTeamInput = document.getElementById('sidebarTeamInput');
+      if (sidebarTeamInput && sidebarTeamInput.value != count) sidebarTeamInput.value = count;
+
+      syncModeAndInputs();
+      updateTextareaFromItems();
+      drawWheel();
+      if (notify) {
+        showToast(`Set to ${count} teams!`, '👥');
+      }
+    }
+
+    function setSeatCount(count, notify = true) {
+      if (isSpinning) return;
+      count = parseInt(count, 10);
+      if (isNaN(count)) count = 25;
+      count = Math.max(2, Math.min(count, 100));
+      currentSeatCount = count;
+      currentMode = 'seats';
+      items = getSeatList(count);
+
+      const sidebarSeatInput = document.getElementById('sidebarSeatInput');
+      if (sidebarSeatInput && sidebarSeatInput.value != count) sidebarSeatInput.value = count;
+
+      syncModeAndInputs();
+      updateTextareaFromItems();
+      drawWheel();
+      if (notify) {
+        showToast(`Set to ${count} seat numbers (1~${count})!`, '🔢');
+      }
+    }
+
+    function syncModeAndInputs() {
+      const modeTeamsBtn = document.getElementById('stageModeTeamsBtn');
+      const modeSeatsBtn = document.getElementById('stageModeSeatsBtn');
+      const stageInput = document.getElementById('stageCountInput');
+      const badge = document.getElementById('currentGroupCountBadge');
+
+      if (currentMode === 'teams') {
+        if (modeTeamsBtn) {
+          modeTeamsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-sky-600 text-white shadow-md shadow-sky-600/30 flex items-center gap-1.5';
+        }
+        if (modeSeatsBtn) {
+          modeSeatsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5';
+        }
+        if (stageInput) {
+          stageInput.value = currentTeamCount;
+          stageInput.className = 'w-12 bg-transparent text-center font-extrabold text-base text-sky-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+        }
+        if (badge) badge.textContent = `${currentTeamCount} Teams Mode`;
+      } else if (currentMode === 'seats') {
+        if (modeTeamsBtn) {
+          modeTeamsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5';
+        }
+        if (modeSeatsBtn) {
+          modeSeatsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-sky-600 text-white shadow-md shadow-sky-600/30 flex items-center gap-1.5';
+        }
+        if (stageInput) {
+          stageInput.value = currentSeatCount;
+          stageInput.className = 'w-12 bg-transparent text-center font-extrabold text-base text-sky-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+        }
+        if (badge) badge.textContent = `${currentSeatCount} Seats Mode`;
+      } else {
+        if (modeTeamsBtn) {
+          modeTeamsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5';
+        }
+        if (modeSeatsBtn) {
+          modeSeatsBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5';
+        }
+        if (badge) badge.textContent = 'Custom List';
+      }
+    }
+
+    // High-end Gemstone Palettes for Sector Slices (with inner luster, midtone, and deep shadow)
+    const GEMSTONE_PALETTES = [
+      { inner: '#6ee7b7', mid: '#059669', outer: '#022c22' }, // Emerald Brilliance
+      { inner: '#7dd3fc', mid: '#0284c7', outer: '#082f49' }, // Royal Sapphire
+      { inner: '#fde047', mid: '#d97706', outer: '#451a03' }, // Golden Citrine
+      { inner: '#f472b6', mid: '#db2777', outer: '#500724' }, // Ruby Spinel
+      { inner: '#d8b4fe', mid: '#7c3aed', outer: '#2e1065' }, // Imperial Amethyst
+      { inner: '#5eead4', mid: '#0d9488', outer: '#042f2e' }, // Mint Aquamarine
+      { inner: '#fb923c', mid: '#ea580c', outer: '#431407' }, // Spessartine Garnet
+      { inner: '#86efac', mid: '#16a34a', outer: '#052e16' }, // Peridot Jade
+      { inner: '#fda4af', mid: '#e11d48', outer: '#4c0519' }, // Rose Tourmaline
+      { inner: '#a5b4fc', mid: '#4f46e5', outer: '#1e1b4b' }, // Royal Tanzanite
+      { inner: '#67e8f9', mid: '#0891b2', outer: '#164e63' }, // Zircon Cyan
+      { inner: '#fca5a5', mid: '#dc2626', outer: '#450a0a' }, // Deep Ruby
+    ];
+
+    // Seeded Diamond glitter particles for the outer rim (320 sparkling crystals)
+    const DIAMOND_COUNT = 320;
+    const diamondParticles = [];
+    for (let i = 0; i < DIAMOND_COUNT; i++) {
+      const angle = (i / DIAMOND_COUNT) * 2 * Math.PI + (Math.sin(i * 13.7) * 0.015);
+      const rRatio = 0.08 + 0.84 * (Math.sin(i * 17.3) * 0.5 + 0.5);
+      const size = 1.0 + (Math.sin(i * 23.1) * 0.5 + 0.5) * 2.5;
+      const type = i % 5;
+      const speed = 0.003 + (i % 7) * 0.0018;
+      const phase = i * 1.618;
+      diamondParticles.push({ angle, rRatio, size, type, speed, phase });
+    }
+
+    // Sparkling 4-point Lens Flare Star Glints around the rim
+    const STAR_GLINTS = [
+      { angle: 0.18, rRatio: 0.5, baseSize: 22, phase: 0 },
+      { angle: 0.75, rRatio: 0.4, baseSize: 26, phase: 1.3 },
+      { angle: 1.32, rRatio: 0.6, baseSize: 20, phase: 2.6 },
+      { angle: 1.88, rRatio: 0.45, baseSize: 28, phase: 4.0 },
+      { angle: 2.42, rRatio: 0.55, baseSize: 23, phase: 0.9 },
+      { angle: 2.95, rRatio: 0.35, baseSize: 25, phase: 3.1 },
+      { angle: 3.48, rRatio: 0.55, baseSize: 21, phase: 5.2 },
+      { angle: 4.05, rRatio: 0.45, baseSize: 27, phase: 1.8 },
+      { angle: 4.60, rRatio: 0.6, baseSize: 22, phase: 3.7 },
+      { angle: 5.15, rRatio: 0.4, baseSize: 26, phase: 2.4 },
+      { angle: 5.68, rRatio: 0.5, baseSize: 20, phase: 4.9 },
+      { angle: 6.12, rRatio: 0.58, baseSize: 24, phase: 0.4 }
+    ];
+
+    // Function to draw sparkling 4-point diamond star glints with lens flare
+    function drawStarGlint(ctx, x, y, size, opacity) {
+      if (opacity <= 0.03 || size <= 1) return;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, Math.max(0, opacity));
+
+      // 1. Soft radial bloom glow in cosmic starlight & cyan
+      const bloom = ctx.createRadialGradient(x, y, 0, x, y, size * 1.6);
+      bloom.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      bloom.addColorStop(0.25, 'rgba(186, 230, 253, 0.85)'); // Starlight Ice Blue
+      bloom.addColorStop(0.65, 'rgba(56, 189, 248, 0.35)');  // Electric Cyan
+      bloom.addColorStop(1, 'rgba(2, 132, 199, 0)');
+      ctx.fillStyle = bloom;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 1.6, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // 2. Main 4-point star rays (horizontal & vertical)
+      ctx.fillStyle = '#ffffff';
+      const armLen = size * 1.35;
+      const armW = Math.max(1.4, size * 0.13);
+
+      // Vertical ray
+      ctx.beginPath();
+      ctx.moveTo(x, y - armLen);
+      ctx.quadraticCurveTo(x, y, x + armW, y);
+      ctx.quadraticCurveTo(x, y, x, y + armLen);
+      ctx.quadraticCurveTo(x, y, x - armW, y);
+      ctx.quadraticCurveTo(x, y, x, y - armLen);
+      ctx.fill();
+
+      // Horizontal ray
+      ctx.beginPath();
+      ctx.moveTo(x - armLen, y);
+      ctx.quadraticCurveTo(x, y, x, y + armW);
+      ctx.quadraticCurveTo(x, y, x + armLen, y);
+      ctx.quadraticCurveTo(x, y, x - armW, y);
+      ctx.quadraticCurveTo(x, y, x - armLen, y);
+      ctx.fill();
+
+      // 3. Diagonal secondary 45-degree rays
+      const diagLen = armLen * 0.46;
+      const diagW = armW * 0.8;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.beginPath();
+      ctx.moveTo(0, -diagLen);
+      ctx.quadraticCurveTo(0, 0, diagW, 0);
+      ctx.quadraticCurveTo(0, 0, 0, diagLen);
+      ctx.quadraticCurveTo(0, 0, -diagW, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -diagLen);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-diagLen, 0);
+      ctx.quadraticCurveTo(0, 0, 0, diagW);
+      ctx.quadraticCurveTo(0, 0, 0, diagLen);
+      ctx.quadraticCurveTo(0, 0, 0, -diagW);
+      ctx.quadraticCurveTo(0, 0, -diagLen, 0);
+      ctx.fill();
+      ctx.restore();
+
+      // 4. Center brilliant crystal core
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(1.8, size * 0.16), 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    let items = [...PRESETS.groups];
+    let isSpinning = false;
+    let currentAngle = 0; // In radians
+    let lastWinnerItem = null;
+    let historyRecords = [];
+
+    // DOM references
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const pointer = document.getElementById("pointer");
+    const spinBtn = document.getElementById("spinBtn");
+    const spinCenterBtn = document.getElementById("spinCenterBtn");
+    const shuffleListBtn = document.getElementById("shuffleListBtn");
+    const itemsTextarea = document.getElementById("itemsTextarea");
+    const updateWheelBtn = document.getElementById("updateWheelBtn");
+    const clearInputBtn = document.getElementById("clearInputBtn");
+    const itemCountDisplay = document.getElementById("itemCountDisplay");
+    
+    // Modal & Toast elements
+    const winnerModal = document.getElementById("winnerModal");
+    const winnerDisplayTitle = document.getElementById("winnerDisplayTitle");
+    const modalKeepBtn = document.getElementById("modalKeepBtn");
+    const modalRemoveBtn = document.getElementById("modalRemoveBtn");
+    const historyListContainer = document.getElementById("historyListContainer");
+    const historyEmptyState = document.getElementById("historyEmptyState");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const soundToggleBtn = document.getElementById("soundToggleBtn");
+    const soundIcon = document.getElementById("soundIcon");
+    const soundLabel = document.getElementById("soundLabel");
+    const toast = document.getElementById("toast");
+    const toastMsg = document.getElementById("toastMsg");
+
+    // Confetti canvas
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    const confettiCtx = confettiCanvas.getContext("2d");
+    let confettiParticles = [];
+    let confettiAnimationId = null;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+      drawWheel();
+    }
+
+    let idleAnimId = null;
+
+    function startIdleLoop() {
+      if (idleAnimId) cancelAnimationFrame(idleAnimId);
+      function idleTick(timestamp) {
+        if (!isSpinning) {
+          drawWheel(timestamp);
+          idleAnimId = requestAnimationFrame(idleTick);
+        }
+      }
+      idleAnimId = requestAnimationFrame(idleTick);
+    }
+
+    function drawWheel(timestamp) {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      if (width === 0 || height === 0) return;
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(centerX, centerY) - 8;
+      const rimWidth = 22;
+      const sectorRadius = Math.max(10, radius - rimWidth);
+
+      ctx.clearRect(0, 0, width, height);
+
+      const total = items.length;
+      if (total === 0) {
+        // Draw empty indicator
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#02081a';
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.stroke();
+
+        ctx.fillStyle = '#bae6fd';
+        ctx.font = 'bold 16px "Outfit", "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Please add items to list', centerX, centerY);
+        ctx.restore();
+        return;
+      }
+
+      const arcAngle = (2 * Math.PI) / total;
+      const now = timestamp || performance.now();
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(currentAngle);
+
+      // --- 1. Draw Gemstone Sectors with Radial Luster ---
+      for (let i = 0; i < total; i++) {
+        const start = i * arcAngle;
+        const end = start + arcAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, sectorRadius, start, end);
+        ctx.closePath();
+
+        const pal = GEMSTONE_PALETTES[i % GEMSTONE_PALETTES.length];
+        const grad = ctx.createRadialGradient(0, 0, 25, 0, 0, sectorRadius);
+        grad.addColorStop(0, pal.inner);
+        grad.addColorStop(0.55, pal.mid);
+        grad.addColorStop(1, pal.outer);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Facet cut division lines between slices
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.stroke();
+
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.stroke();
+
+        // Draw Sector Text radiating outward
+        ctx.save();
+        const midAngle = start + arcAngle / 2;
+        ctx.rotate(midAngle);
+
+        // Dynamic font styling based on segment count
+        let fontSize = 16;
+        if (total > 20) fontSize = 11;
+        else if (total > 12) fontSize = 13;
+        else if (total > 8) fontSize = 16;
+        else if (total <= 6) fontSize = 21;
+        else fontSize = 18;
+
+        let text = items[i];
+        const maxTextWidth = sectorRadius - 74;
+
+        ctx.font = `800 ${fontSize}px "Outfit", "Montserrat", "Noto Sans TC", sans-serif`;
+        while (ctx.measureText(text).width > maxTextWidth && fontSize > 11) {
+          fontSize--;
+          ctx.font = `800 ${fontSize}px "Outfit", "Montserrat", "Noto Sans TC", sans-serif`;
+        }
+
+        if (ctx.measureText(text).width > maxTextWidth) {
+          while (ctx.measureText(text + '..').width > maxTextWidth && text.length > 1) {
+            text = text.slice(0, -1);
+          }
+          text += '..';
+        }
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const textX = (sectorRadius + 44) / 2;
+
+        // Dark crisp outline for outstanding legibility against jewel colors
+        ctx.lineWidth = 4.5;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.strokeText(text, textX, 0);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(text, textX, 0);
+        ctx.restore();
+      }
+
+      // --- 2. Inner Hub Backing Ring (Depth Shadow) ---
+      ctx.beginPath();
+      ctx.arc(0, 0, 48, 0, 2 * Math.PI);
+      ctx.fillStyle = '#02081a';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      ctx.stroke();
+
+      // --- 3. Thick Sparkling Diamond Glitter Border Ring ---
+      // Metallic dark platinum base band
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+      ctx.arc(0, 0, sectorRadius, 0, 2 * Math.PI, true);
+      const rimGrad = ctx.createRadialGradient(0, 0, sectorRadius, 0, 0, radius);
+      rimGrad.addColorStop(0, '#040f28');
+      rimGrad.addColorStop(0.3, '#0c224a');
+      rimGrad.addColorStop(0.7, '#071638');
+      rimGrad.addColorStop(1, '#020718');
+      ctx.fillStyle = rimGrad;
+      ctx.fill();
+
+      // Draw Diamond Glitter Specks (320 sparkling crystals)
+      for (let i = 0; i < diamondParticles.length; i++) {
+        const p = diamondParticles[i];
+        const particleAngle = p.angle;
+        const pr = sectorRadius + p.rRatio * (radius - sectorRadius);
+        const px = Math.cos(particleAngle) * pr;
+        const py = Math.sin(particleAngle) * pr;
+
+        const twinkle = 0.5 + 0.5 * Math.sin(now * p.speed + p.phase);
+        ctx.save();
+        ctx.globalAlpha = 0.45 + 0.55 * twinkle;
+
+        if (p.type === 0) ctx.fillStyle = '#ffffff';
+        else if (p.type === 1) ctx.fillStyle = '#e2e8f0';
+        else if (p.type === 2) ctx.fillStyle = '#bae6fd';
+        else if (p.type === 3) ctx.fillStyle = '#38bdf8';
+        else ctx.fillStyle = '#67e8f9';
+
+        if (p.size > 2.2) {
+          ctx.translate(px, py);
+          ctx.rotate(particleAngle + Math.PI / 4);
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        } else {
+          ctx.beginPath();
+          ctx.arc(px, py, p.size / 2, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Outer & Inner Platinum/Diamond Beveled Rings
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = '#f8fafc';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, radius - 1.5, 0, 2 * Math.PI);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, sectorRadius, 0, 2 * Math.PI);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, sectorRadius - 1.5, 0, 2 * Math.PI);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#0284c7';
+      ctx.stroke();
+
+      // --- 4. Sparkling 4-point Diamond Star Glints (Lens Flares ✨) ---
+      for (let i = 0; i < STAR_GLINTS.length; i++) {
+        const g = STAR_GLINTS[i];
+        const glintAngle = g.angle;
+        const gr = sectorRadius + g.rRatio * (radius - sectorRadius);
+        const gx = Math.cos(glintAngle) * gr;
+        const gy = Math.sin(glintAngle) * gr;
+
+        const cycle = (now * 0.0035 + g.phase) % (2 * Math.PI);
+        const pulse = Math.pow(Math.sin(cycle) * 0.5 + 0.5, 2.5);
+        const glintSize = g.baseSize * (0.7 + 0.55 * pulse);
+        const glintOpacity = 0.35 + 0.65 * pulse;
+
+        drawStarGlint(ctx, gx, gy, glintSize, glintOpacity);
+      }
+
+      ctx.restore();
+    }
+
+    function spinWheel() {
+      if (isSpinning) return;
+      if (items.length === 0) {
+        showToast('Please enter at least one option!', '⚠️');
+        return;
+      }
+      if (items.length === 1) {
+        showToast('Only 1 item in list, no need to spin!', 'ℹ️');
+        announceWinner(items[0]);
+        return;
+      }
+
+      if (idleAnimId) {
+        cancelAnimationFrame(idleAnimId);
+        idleAnimId = null;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+      spinCenterBtn.disabled = true;
+      spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      spinCenterBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      const spinDuration = 4500; // 4.5s
+      const startTime = performance.now();
+
+      // Random target spin: between 6 and 9 full rotations plus random offset
+      const startAngle = currentAngle % (2 * Math.PI);
+      const extraRotations = (6 + Math.random() * 3) * (2 * Math.PI);
+      const randomStopOffset = Math.random() * (2 * Math.PI);
+      const totalDeltaAngle = extraRotations + randomStopOffset;
+
+      let lastSliceIndex = -1;
+
+      // Deceleration curve: easeOutQuint (f(t) = 1 - (1-t)^5)
+      function easeOutQuint(t) {
+        return 1 - Math.pow(1 - t, 5);
+      }
+
+      function animateSpin(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / spinDuration, 1);
+        const ease = easeOutQuint(progress);
+
+        currentAngle = startAngle + totalDeltaAngle * ease;
+
+        // Pointer collision bounce & sound calculation
+        const sliceAngle = (2 * Math.PI) / items.length;
+        const normalizedPointerAngle = (3 * Math.PI / 2 - (currentAngle % (2 * Math.PI)) + 4 * Math.PI) % (2 * Math.PI);
+        const currentSliceIndex = Math.floor(normalizedPointerAngle / sliceAngle);
+
+        if (currentSliceIndex !== lastSliceIndex) {
+          lastSliceIndex = currentSliceIndex;
+          soundManager.playTick();
+          // Trigger CSS pointer wobble
+          pointer.classList.remove('pointer-tick');
+          void pointer.offsetWidth; // Force DOM reflow
+          pointer.classList.add('pointer-tick');
+        }
+
+        drawWheel(currentTime);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateSpin);
+        } else {
+          // Finished spinning
+          isSpinning = false;
+          spinBtn.disabled = false;
+          spinCenterBtn.disabled = false;
+          spinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          spinCenterBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+          const finalWinner = items[currentSliceIndex % items.length];
+          announceWinner(finalWinner);
+          startIdleLoop();
+        }
+      }
+
+      requestAnimationFrame(animateSpin);
+    }
+
+    function announceWinner(winner) {
+      lastWinnerItem = winner;
+      soundManager.playFanfare();
+      triggerConfetti();
+
+      // Update and show modal
+      winnerDisplayTitle.textContent = winner;
+      winnerModal.classList.remove('hidden');
+
+      // Record to history
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      historyRecords.unshift({
+        name: winner,
+        time: timeStr,
+        order: historyRecords.length + 1
+      });
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (historyRecords.length === 0) {
+        historyEmptyState.classList.remove('hidden');
+        historyListContainer.innerHTML = '';
+        historyListContainer.appendChild(historyEmptyState);
+        return;
+      }
+
+      historyEmptyState.classList.add('hidden');
+      historyListContainer.innerHTML = '';
+
+      historyRecords.forEach((rec, idx) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'flex items-center justify-between p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs hover:border-slate-700 transition';
+        itemEl.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="w-5 h-5 rounded-full ${idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-slate-800 text-slate-400'} flex items-center justify-center font-bold text-[10px]">
+              #${rec.order}
+            </span>
+            <span class="font-bold text-slate-100 truncate">${rec.name}</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono flex-shrink-0 ml-2">${rec.time}</span>
+        `;
+        historyListContainer.appendChild(itemEl);
+      });
+    }
+
+    function closeModal() {
+      winnerModal.classList.add('hidden');
+      stopConfetti();
+    }
+
+    function removeItemFromWheel(itemToRemove) {
+      const idx = items.indexOf(itemToRemove);
+      if (idx !== -1) {
+        items.splice(idx, 1);
+        updateTextareaFromItems();
+        drawWheel();
+        showToast(`Removed from wheel: ${itemToRemove}`, '🗑️');
+      }
+      closeModal();
+    }
+
+    function updateTextareaFromItems() {
+      itemsTextarea.value = items.join('\n');
+      itemCountDisplay.textContent = items.length;
+    }
+
+    function updateItemsFromTextarea() {
+      const text = itemsTextarea.value;
+      const lines = text
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+      if (lines.length === 0) {
+        showToast('List cannot be empty!', '⚠️');
+        return;
+      }
+
+      items = lines;
+      currentMode = 'custom';
+      syncModeAndInputs();
+      itemCountDisplay.textContent = items.length;
+      drawWheel();
+      showToast(`Successfully loaded ${items.length} items!`, '✅');
+    }
+
+    function shuffleItems() {
+      if (isSpinning || items.length <= 1) return;
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      updateTextareaFromItems();
+      drawWheel();
+      showToast('Wheel sectors shuffled!', '🔀');
+    }
+
+    function showToast(message, icon = 'ℹ️') {
+      toastMsg.textContent = message;
+      document.getElementById('toastIcon').textContent = icon;
+      toast.classList.remove('opacity-0', 'translate-y-20');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-20');
+      }, 2600);
+    }
+
+    function resizeConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+
+    function triggerConfetti() {
+      resizeConfetti();
+      confettiCanvas.classList.remove('hidden');
+      confettiParticles = [];
+
+      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+      for (let i = 0; i < 120; i++) {
+        confettiParticles.push({
+          x: confettiCanvas.width / 2,
+          y: confettiCanvas.height / 2,
+          vx: (Math.random() - 0.5) * 18,
+          vy: (Math.random() - 0.8) * 16 - 2,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 12,
+          gravity: 0.35,
+          alpha: 1
+        });
+      }
+
+      if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      let aliveCount = 0;
+
+      for (let p of confettiParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.rotation += p.rotSpeed;
+        p.alpha -= 0.007;
+
+        if (p.alpha > 0 && p.y < confettiCanvas.height) {
+          aliveCount++;
+          confettiCtx.save();
+          confettiCtx.globalAlpha = Math.max(0, p.alpha);
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate((p.rotation * Math.PI) / 180);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          confettiCtx.restore();
+        }
+      }
+
+      if (aliveCount > 0) {
+        confettiAnimationId = requestAnimationFrame(animateConfetti);
+      } else {
+        stopConfetti();
+      }
+    }
+
+    function stopConfetti() {
+      if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiCanvas.classList.add('hidden');
+    }
+
+    function setupEventListeners() {
+      spinBtn.addEventListener('click', spinWheel);
+      spinCenterBtn.addEventListener('click', spinWheel);
+      shuffleListBtn.addEventListener('click', shuffleItems);
+      updateWheelBtn.addEventListener('click', updateItemsFromTextarea);
+
+      clearInputBtn.addEventListener('click', () => {
+        itemsTextarea.value = '';
+        items = [];
+        currentMode = 'custom';
+        syncModeAndInputs();
+        itemCountDisplay.textContent = 0;
+        drawWheel();
+      });
+
+      // Stage mode buttons
+      const modeTeamsBtn = document.getElementById('stageModeTeamsBtn');
+      const modeSeatsBtn = document.getElementById('stageModeSeatsBtn');
+      if (modeTeamsBtn) {
+        modeTeamsBtn.addEventListener('click', () => {
+          setTeamCount(currentTeamCount);
+        });
+      }
+      if (modeSeatsBtn) {
+        modeSeatsBtn.addEventListener('click', () => {
+          setSeatCount(currentSeatCount);
+        });
+      }
+
+      // Stage stepper & input
+      const stageInput = document.getElementById('stageCountInput');
+      const stageMinus = document.getElementById('stageMinusBtn');
+      const stagePlus = document.getElementById('stagePlusBtn');
+      const stageApply = document.getElementById('stageApplyBtn');
+
+      if (stageMinus) {
+        stageMinus.addEventListener('click', () => {
+          if (currentMode === 'seats') {
+            setSeatCount(currentSeatCount - 1);
+          } else {
+            setTeamCount(currentTeamCount - 1);
+          }
+        });
+      }
+      if (stagePlus) {
+        stagePlus.addEventListener('click', () => {
+          if (currentMode === 'seats') {
+            setSeatCount(currentSeatCount + 1);
+          } else {
+            setTeamCount(currentTeamCount + 1);
+          }
+        });
+      }
+      if (stageApply) {
+        stageApply.addEventListener('click', () => {
+          if (stageInput) {
+            if (currentMode === 'seats') {
+              setSeatCount(stageInput.value);
+            } else {
+              setTeamCount(stageInput.value);
+            }
+          }
+        });
+      }
+      if (stageInput) {
+        stageInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentMode === 'seats') {
+              setSeatCount(stageInput.value);
+            } else {
+              setTeamCount(stageInput.value);
+            }
+          }
+        });
+        stageInput.addEventListener('change', () => {
+          if (currentMode === 'seats') {
+            setSeatCount(stageInput.value);
+          } else {
+            setTeamCount(stageInput.value);
+          }
+        });
+      }
+
+      // Sidebar Team Controls
+      const sidebarTeamInput = document.getElementById('sidebarTeamInput');
+      const sidebarTeamMinus = document.getElementById('sidebarTeamMinusBtn');
+      const sidebarTeamPlus = document.getElementById('sidebarTeamPlusBtn');
+      const sidebarTeamApply = document.getElementById('sidebarTeamApplyBtn');
+
+      if (sidebarTeamMinus) {
+        sidebarTeamMinus.addEventListener('click', () => {
+          setTeamCount(currentTeamCount - 1);
+        });
+      }
+      if (sidebarTeamPlus) {
+        sidebarTeamPlus.addEventListener('click', () => {
+          setTeamCount(currentTeamCount + 1);
+        });
+      }
+      if (sidebarTeamApply) {
+        sidebarTeamApply.addEventListener('click', () => {
+          if (sidebarTeamInput) setTeamCount(sidebarTeamInput.value);
+        });
+      }
+      if (sidebarTeamInput) {
+        sidebarTeamInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            setTeamCount(sidebarTeamInput.value);
+          }
+        });
+        sidebarTeamInput.addEventListener('change', () => {
+          setTeamCount(sidebarTeamInput.value);
+        });
+      }
+
+      // Sidebar Seat Controls
+      const sidebarSeatInput = document.getElementById('sidebarSeatInput');
+      const sidebarSeatMinus = document.getElementById('sidebarSeatMinusBtn');
+      const sidebarSeatPlus = document.getElementById('sidebarSeatPlusBtn');
+      const sidebarSeatApply = document.getElementById('sidebarSeatApplyBtn');
+
+      if (sidebarSeatMinus) {
+        sidebarSeatMinus.addEventListener('click', () => {
+          setSeatCount(currentSeatCount - 1);
+        });
+      }
+      if (sidebarSeatPlus) {
+        sidebarSeatPlus.addEventListener('click', () => {
+          setSeatCount(currentSeatCount + 1);
+        });
+      }
+      if (sidebarSeatApply) {
+        sidebarSeatApply.addEventListener('click', () => {
+          if (sidebarSeatInput) setSeatCount(sidebarSeatInput.value);
+        });
+      }
+      if (sidebarSeatInput) {
+        sidebarSeatInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            setSeatCount(sidebarSeatInput.value);
+          }
+        });
+        sidebarSeatInput.addEventListener('change', () => {
+          setSeatCount(sidebarSeatInput.value);
+        });
+      }
+
+      // Other Preset buttons
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const key = e.currentTarget.dataset.preset;
+          if (PRESETS[key]) {
+            items = [...PRESETS[key]];
+            currentMode = 'custom';
+            syncModeAndInputs();
+            updateTextareaFromItems();
+            drawWheel();
+            showToast('Preset list loaded!', '📋');
+          }
+        });
+      });
+
+      // Modal buttons
+      modalKeepBtn.addEventListener('click', closeModal);
+      modalRemoveBtn.addEventListener('click', () => {
+        if (lastWinnerItem) {
+          removeItemFromWheel(lastWinnerItem);
+        }
+      });
+
+      // Clear history
+      clearHistoryBtn.addEventListener('click', () => {
+        historyRecords = [];
+        renderHistory();
+        showToast('Draw history cleared', '🧹');
+      });
+
+      // Sound toggle
+      soundToggleBtn.addEventListener('click', () => {
+        soundManager.enabled = !soundManager.enabled;
+        soundIcon.textContent = soundManager.enabled ? '🔊' : '🔇';
+        soundLabel.textContent = `Sound: ${soundManager.enabled ? 'On' : 'Muted'}`;
+        showToast(soundManager.enabled ? 'Sound enabled' : 'Sound muted', soundManager.enabled ? '🔊' : '🔇');
+      });
+
+      // Fullscreen projector mode toggle
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          document.getElementById('fullscreenIcon').textContent = '⤦';
+        } else {
+          document.exitFullscreen().catch(() => {});
+          document.getElementById('fullscreenIcon').textContent = '⛶';
+        }
+      });
+
+      // Toggle drawer for mobile devices
+      const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+      const sidebarPanel = document.getElementById('sidebarPanel');
+      sidebarToggleBtn.addEventListener('click', () => {
+        sidebarPanel.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // Canvas responsive auto resize
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        resizeConfetti();
+      });
+    }
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTeamCount(6, false);
+      resizeCanvas();
+      setupEventListeners();
+      startIdleLoop();
+
+      // Ensure crisp high-end typography redraw once web fonts finish loading
+      if (document.fonts) {
+        document.fonts.ready.then(() => {
+          drawWheel();
+        });
+      }
+    });
+  </script>
+</body>
+</html>
